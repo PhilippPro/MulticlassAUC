@@ -3,7 +3,7 @@ multiclass.auc2 = function(pred, truth){
   predP = pred
   # choose the probablity of the truth
   predV = vnapply(seq_row(pred), function(i) {
-    pred[i, resp[i]]
+    pred[i, truth[i]]
   })
   auc = pROC::multiclass.roc(response = truth, predictor = predV)$auc
   as.numeric(auc)
@@ -11,9 +11,15 @@ multiclass.auc2 = function(pred, truth){
 
 library(mlr)
 
-lrn = makeLearner("classif.randomForest", predict.type = "prob")
+lrn = makeLearner("classif.lda", predict.type = "prob")
 model = train(lrn, iris.task)
 pred = predict(model, iris.task)
 
 library(caTools)
-colAUC(getPredictionProbabilities(pred), pred$data$truth)
+m = colAUC(getPredictionProbabilities(pred)[,1], pred$data$truth)
+# First column: j setosa, 
+colAUC(getPredictionProbabilities(pred)[,1], pred$data$truth)
+
+# Is this Hand and Till?
+mean(m[col(m)!=4-row(m)])
+colMeans(m)
