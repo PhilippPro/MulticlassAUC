@@ -23,3 +23,14 @@ colAUC(getPredictionProbabilities(pred)[,1], pred$data$truth)
 # Is this Hand and Till?
 mean(m[col(m)!=4-row(m)])
 colMeans(m)
+
+m = colAUC(getPredictionProbabilities(pred), pred$data$truth)
+c = t(combn(1:nlevels(pred$data$truth), 2, simplify = T))
+m[cbind(1:nrow(c),c[,2])]
+mean(m[cbind(1:nrow(c),c[,2])])
+
+# AUNU
+for(j in 1:nlevels(pred$data$truth)){
+  
+}
+
