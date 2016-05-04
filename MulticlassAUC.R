@@ -4,6 +4,9 @@ lrn = makeLearner("classif.lda", predict.type = "prob")
 model = train(lrn, iris.task)
 pred = predict(model, iris.task)
 
+truth = pred$data$truth
+probabilities = getPredictionProbabilities(pred)
+
 library(caTools)
 m = colAUC(probabilities, pred$data$truth)
 # First column: j setosa
@@ -18,10 +21,8 @@ result_pROC = auc(droplevels(pred$data$truth[pred$data$truth %in% c("setosa", "v
 result_pROC == m[2,3]
 # Seems to be reliable!
 
-#m ulticlass.auc3(getPredictionProbabilities(pred), pred$data$truth)
+# multiclass.auc3(getPredictionProbabilities(pred), pred$data$truth)
 
-truth = pred$data$truth
-probabilities = getPredictionProbabilities(pred)
 # AUNU
 mean(vnapply(1:nlevels(truth), function(i) colAUC(probabilities[,i], truth == levels(truth)[i])))
 
