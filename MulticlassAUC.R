@@ -31,15 +31,13 @@ sum(vnapply(1:nlevels(truth), function(i) mean(truth == levels(truth)[i]) * colA
 
 # AU1U (Hand and Till)
 m = colAUC(probabilities, truth)
-mean(m[col(m) != ncol(m) + 1 - row(m)])
-# or
-c = t(combn(1:nlevels(truth), 2, simplify = T))
-mean(m[cbind(1:nrow(c), c[, 2])])
+c = c(combn(1:nlevels(truth), 2))
+mean(m[cbind(rep(1:nrow(m), each = 2), c)])
 
 # AU1P
 m = colAUC(probabilities, truth)
-weights = table(truth[-1]) / length(truth[-1])
-m = m * matrix(rep(weights, each = length(weights)), ncol = length(weights))
-sum(m[col(m) != ncol(m) + 1 - row(m)]) / (ncol(m) - 1)
+weights = table(truth) / length(truth)
+m = m * matrix(rep(weights, each = nrow(m)), ncol = length(weights))
+sum(m[cbind(rep(1:nrow(m), each = 2), c)]) / (nlevels(truth) - 1)
 
 # ensure that it works, also when no observation is present!!
