@@ -21,6 +21,7 @@ binaryclass.auc = function(pred, truth,  names=FALSE) {
     return(res)
   }
   
+  
   # function makeMatrixI
   makeMatrixI=function(j, k, pred){
     n=dim(pred)[1]
@@ -42,7 +43,9 @@ binaryclass.auc = function(pred, truth,  names=FALSE) {
   AUC=matrix(rep(0.5, K*K),K,K)
   
   for (j in c(1:K)) {
+    ptmMakeMatrix <- proc.time()
     matrixI.tempj=makeMatrixI(j,j,pred)
+    print(proc.time()-ptmMakeMatrix)
     for (k in c(1:K)) {
       if (k!=j) {
         value=t(f[,j])%*%matrixI.tempj%*%f[,k]/(f.summed[j]*f.summed[k])
@@ -120,6 +123,7 @@ binaryclass.Scoredauc = function(pred, truth,  names=FALSE) {
     return(res)
   }
   
+
   # function makeMatrixI
   makeMatrixI.scored=function(j, k, pred){
     n=dim(pred)[1]
@@ -141,7 +145,9 @@ binaryclass.Scoredauc = function(pred, truth,  names=FALSE) {
   AUC=matrix(rep(NA, K*K),K,K)
   
   for (j in c(1:K)) {
+    ptmMakematrix <- proc.time()
     matrixI.tempj=makeMatrixI.scored(j,j,pred)
+    print(proc.time()-ptmMakematrix)
     for (k in c(1:K)) {
       if (k!=j) {
         AUC[j,k]=t(f[,j])%*%matrixI.tempj%*%f[,k]/(f.summed[j]*f.summed[k])
@@ -278,8 +284,67 @@ binaryclass.auc.fast = function(pred, truth,  names=FALSE) {
   Auc<-apply(Auc,c(1,2),function(x) return(max(x,1-x)))
   Auc2<-apply(Auc2,c(1,2),function(x) return(max(x,1-x)))
   rownames(Auc2) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], 
-                        sep = "")
+                         sep = "")
   colnames(Auc2) = colnames(X)
+  
+  print(proc.time()-ptm)
+  return(Auc)
+}
+
+
+## Fast AUC -----
+binaryclass.auc.fast.perso = function(pred, truth,  names=FALSE) {
+  ptm <- proc.time()
+  # Parameters
+  y<-truth
+  X<-pred
+  K=dim(pred)[2] #maj k
+  n=dim(pred)[1]
+  levels.values=as.factor(levels(truth))
+  levels.names=levels(truth)
+  L = matrix(rep(levels.values, each = n), n, K)
+  permutations = combs(1:K, 2)
+  nP = nrow(permutations)
+  Auc = matrix(0.5, K, K) # Creates the AUC matrix
+  Auc2 = matrix(NA, nP, K) # Creates the AUC matrix
+  
+  
+  for (j in c(1:K)) {
+    x = sort(X[, j], index = TRUE) # sorting with increasing probability for class j
+    
+    idx = y[x$ix] # indexes by increasing order of probabilities
+    d = (matrix(rep(idx, K), n, K) == L) # Transforming the predicted vector in K columns of TRUE/FALSE
+    d1=d
+    d=apply(d,2,cumsum) # Cumulative sum of number in class
+    dd = rbind(matrix(0, 1, K), d) # Add one line for integral computation
+    nD = nrow(d) # New number of lines for dj
+    d2=d1*1
+    
+    for (i in 1:nP) {
+      c1 = permutations[i, 1]
+      c2 = permutations[i, 2]
+      number = d[nD, c1] * d[nD, c2]
+      sum=0
+      for (p in c(1:n)) {
+        if (d2[p,c1]==1) {
+          #sum=sum+length(which(d2[c(1:p),c2]==1))
+          sum=sum+d[p,c2]
+        }
+      }
+      Auc[i, j] = sum/number # En gros le nombre de non variations de c2 par rapport a c1 qui est constant
+    }
+  }
+  
+  
+  # Add the names
+  if (names==TRUE) {
+    colnames(Auc)<-levels.names
+    rownames(Auc)<-levels.names
+  }
+  Auc<-apply(Auc,c(1,2),function(x) return(max(x,1-x)))
+  rownames(Auc) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], 
+                        sep = "")
+  colnames(Auc) = colnames(X)
   
   print(proc.time()-ptm)
   return(Auc)
@@ -327,7 +392,7 @@ multiclass.au1p.fast= function(pred, truth,  names=FALSE) {
 
 
 ## Fast Scored auc
-binaryclass.Scoredauc.fast = function(pred, truth,  names=FALSE) {
+binaryclass.Scoredauc.fast.perso = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   y<-truth
@@ -339,49 +404,41 @@ binaryclass.Scoredauc.fast = function(pred, truth,  names=FALSE) {
   L = matrix(rep(levels.values, each = n), n, K)
   permutations = combs(1:K, 2)
   nP = nrow(permutations)
-  Auc = matrix(0.5, K, K) # Creates the AUC matrix
-  Auc2 = matrix(NA, nP, K) # Creates the AUC matrix
+  Auc = matrix(0.5, K, K) # Creates the AUC matrixc
+  count=0
   
   
   for (j in c(1:K)) {
     x = sort(X[, j], index = TRUE) # sorting with increasing probability for class j
-    nunq = which(diff(x$x) == 0) # Which probability values are equal ?
-    nTies = length(nunq) # How many are equl ?
     
-    if (nTies < n - 1) { # Do all the probabilities are equal ?
-      idx = y[x$ix] # indexes by increasing order of probabilities
-      d = (matrix(rep(idx, K), n, K) == L) # Transforming the predicted vector in K columns of TRUE/FALSE
-      d=apply(d,2,cumsum) # Cumulative sum of number in class
-      if (nTies) # If at least one of the probability equals one another
-        d = d[-nunq, ] # We remove the doublons
-      d = rbind(matrix(0, 1, K), d) # Add one line for integral computation
-      nD = nrow(d) # New number of lines for dj
+    idx = y[x$ix] # indexes by increasing order of probabilities
+    d = (matrix(rep(idx, K), n, K) == L) # Transforming the predicted vector in K columns of TRUE/FALSE
+    d1=d
+    d=apply(d,2,cumsum) # Cumulative sum of number in class
+    dd = rbind(matrix(0, 1, K), d) # Add one line for integral computation
+    nD = nrow(d) # New number of lines for dj
+    d2=d1*1
+    
+    for (i in 1:nP) {
+      c1 = permutations[i, 1]
+      c2 = permutations[i, 2]
+      number = d[nD, c1] * d[nD, c2]
+      sum=0
       
-      
-      for (i in 1:K) {
-        
-        if (i!=j) {
-          number = d[nD, i] * d[nD, j]
-          if (number > 0) 
-            Auc[i, j] = trapz(x=d[, i], y=d[, j])/number # Number of non-variations of j regarding constant values of i
-          # --> gives the number of false negative when trying to predict j
+      for (p in c(1:n)) {
+        if (d2[p,c1]==1) {
+          index=which(d2[c(1:p),c2]==1)
+          if (length(index)>1) {
+            for (q in c(1:length(index)))
+              indexq=index[q]
+            sum=sum+pred[p,c1]-pred[q,c2]
+            count=count+1
+          }
         }
       }
-      
-      
-      for (i in 1:nP) {
-        c1 = permutations[i, 1]
-        c2 = permutations[i, 2]
-        number = d[nD, c1] * d[nD, c2]
-        if ((number > 0)&&((j==c1)||(j==c2))) 
-          Auc2[i, j] = trapz(x=d[, c1], y=d[, c2])/number # En gros le nombre de non variations de c2 par rapport a c1 qui est constant
-      }
-      
-      
-      
+      Auc[i, j] = sum/number # En gros le nombre de non variations de c2 par rapport a c1 qui est constant
     }
   }
-  
   
   # Add the names
   if (names==TRUE) {
@@ -389,14 +446,16 @@ binaryclass.Scoredauc.fast = function(pred, truth,  names=FALSE) {
     rownames(Auc)<-levels.names
   }
   Auc<-apply(Auc,c(1,2),function(x) return(max(x,1-x)))
-  Auc2<-apply(Auc2,c(1,2),function(x) return(max(x,1-x)))
-  rownames(Auc2) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], 
-                         sep = "")
-  colnames(Auc2) = colnames(X)
+  rownames(Auc) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], 
+                        sep = "")
+  colnames(Auc) = colnames(X)
   
   print(proc.time()-ptm)
+  print(paste("count",count))
   return(Auc)
 }
+
+
 
 
 
@@ -444,6 +503,30 @@ multiclass.aunp.fast(predicted, truth, names = TRUE)
 multiclass.au1u.fast(predicted, truth, names = TRUE)
 multiclass.au1p.fast(predicted, truth, names = TRUE)
 
+# My fast AUC
+binaryclass.auc.fast.perso(predicted, truth, names = TRUE)
+
+binaryclass.Scoredauc.fast.perso(predicted, truth, names = TRUE)
+
+# tend to confirm the 2 first lines are in fact 1 because no problem between
+i=1
+test=cbind(predicted[,i],as.factor(iris$Species))
+test[order(test[,1]),]
+
 # Peut être plutot placer un NA dans les endroits ou ca n'a pas de sens ??? et faire le même tableau qu'eux
 
 
+# fast computation on my own --> ok it works
+
+d2=d1*1
+
+c1=3
+c2=2
+
+sum=0
+for (i in c(1:150)) {
+  if (d2[i,c1]==1) {
+    sum=sum+length(which(d2[c(1:i),c2]==1))
+  }
+}
+sum
