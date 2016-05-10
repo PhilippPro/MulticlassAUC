@@ -194,7 +194,7 @@ binaryclass.Probabilisticauc = function(pred, truth, names=FALSE) {
   for (j in c(1:K)) {
     for (k in c(1:K)) {
       if (k!=j) {
-        probAUC[j,k]=((t(f[,j])%*%pred[,j])/f.summed[j]-(t(f[,k])%*%pred[,j])/f.summed[k]+1)/2
+        probAUC[k,j]=((t(f[,j])%*%pred[,j])/f.summed[j]-(t(f[,k])%*%pred[,j])/f.summed[k]+1)/2
       }
     }
   }
