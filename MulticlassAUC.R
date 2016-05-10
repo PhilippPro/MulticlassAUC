@@ -40,4 +40,24 @@ weights = table(truth) / length(truth)
 m = m * matrix(rep(weights, each = nrow(m)), ncol = length(weights))
 sum(m[cbind(rep(1:nrow(m), each = 2), c)]) / (nlevels(truth) - 1)
 
-# ensure that it works, also when no observation is present!!
+# ensure that it works, also when no observation is present and in higher class case!
+
+# k = 4
+source("/nfsmb/koll/probst/Scoring_rules/MulticlassAUC/AUC_Implemented_nopkg.R")
+library(pROC)
+
+data(aSAH)
+probabilities=(cbind(aSAH$s100b,sample(aSAH$s100b-0.3),sample(aSAH$s100b+2),sample(aSAH$s100b)))
+truth = factor(aSAH$gos6, ordered = FALSE)
+
+m = colAUC(probabilities, truth)
+c = c(combn(1:nlevels(truth), 2))
+mean(m[cbind(rep(1:nrow(m), each = 2), c)])
+
+binaryclass.auc(probabilities, truth)
+multiclass.au1u(probabilities, truth)
+# seems good!
+
+binaryclass.auc.fast(probabilities, truth) # transposed version of the slow one
+multiclass.au1u.fast(probabilities, truth)
+# also good
