@@ -4,7 +4,7 @@ rm(list = ls())
 ## The functions ------
 
 ## Basic AUC -----
-binaryclass.auc = function(pred, truth,  names=FALSE) {
+binaryclass.aucOld = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   K=dim(pred)[2]
@@ -105,7 +105,7 @@ multiclass.au1p= function(pred, truth,  names=FALSE) {
 
 ## Scored AUC
 
-binaryclass.Scoredauc = function(pred, truth,  names=FALSE) {
+binaryclass.ScoredaucOld = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   K=dim(pred)[2]

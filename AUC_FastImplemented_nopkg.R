@@ -39,6 +39,7 @@ binaryclass.auc = function(pred, truth,  names=FALSE) {
         if (d2[p,c1]==1) {
           #sum=sum+length(which(d2[c(1:p),c2]==1))
           sum=sum+d[p,c2]
+          index=which(d2[c(1:p),c2]==1)
         }
       }
       Auc[i, j] = sum/number # En gros le nombre de non variations de c2 par rapport a c1 qui est constant
@@ -152,7 +153,7 @@ binaryclass.Scoredauc = function(pred, truth,  names=FALSE) {
   L = matrix(rep(levels.values, each = n), n, K)
   permutations = combs(1:K, 2)
   nP = nrow(permutations)
-  Auc = matrix(0.5, K, K) # Creates the AUC matrixc
+  Auc = matrix(0.5, nP, K) # Creates the AUC matrixc
   count=0
   
   
@@ -172,37 +173,31 @@ binaryclass.Scoredauc = function(pred, truth,  names=FALSE) {
       c2 = permutations[i, 2]
       number = d[nD, c1] * d[nD, c2]
       sum=0
-#       
-#       for (p in c(1:n)) {
-#         if (d2[p,c1]==1) {
-#           index=which(d2[c(1:p),c2]==1)
-#           if (length(index)>1) {
-#             for (q in c(1:length(index)))
-#               indexq=index[q]
-#             sum=sum+pred[p,c1]-pred[q,c2]
-#             count=count+1
-#           }
-#         }
-#       }
+      sumInt=0
+      l<-NULL
       
       for (p in c(1:n)) {
-        if (d2[p,c2]==1) {
-          index=which(d2[c(1:p),c1]==1)
-          if (length(index)>1) {
-            for (q in c(1:length(index)))
+        if (d2[p,c1]==1) {
+          index=which(d2[c(1:p),c2]==1)
+          if (length(index)>0) {
+            for (q in c(1:length(index))) {
               indexq=index[q]
-            sum=sum+pred[p,c2]-pred[q,c1]
-            count=count+1
+              #sum=sum+1
+              sum=sum+pred[(x$ix[p]),c1]-pred[(x$ix[indexq]),c2]
+              l<-c(l,pred[(x$ix[p]),c1]-pred[(x$ix[indexq]),c2])
+              sumInt=sumInt+1
+              count=count+1
+            }
           }
         }
       }
-      
       
       
       Auc[i, j] = sum/number # En gros le nombre de non variations de c2 par rapport a c1 qui est constant
     }
   }
   
+  Auc<-abs(Auc)
   Auc<-apply(Auc,c(1,2),function(x) return(max(x,1-x)))
   # Add the names
   if (names==TRUE) {
@@ -282,7 +277,7 @@ binaryclass.Probabilisticauc = function(pred, truth,  names=FALSE) {
   print(proc.time()-ptm)
   return(Auc.probabilistic)
 }
-  
+
 
 ## multiclass PAUC one v one
 multiclass.Probabilisticauc = function(pred, truth,  names=FALSE) {
@@ -332,6 +327,7 @@ truth=iris$Species
 
 # Classic AUC
 binaryclass.auc(predicted, truth, names = TRUE)
+binaryclass.auc(predicted, truth, names = TRUE)
 multiclass.aunu(predicted, truth, names = TRUE)
 multiclass.aunp(predicted, truth, names = TRUE)
 multiclass.au1u(predicted, truth, names = TRUE)
@@ -339,6 +335,7 @@ multiclass.au1p(predicted, truth, names = TRUE)
 
 #Scored AUC
 binaryclass.Scoredauc(predicted, truth, names = TRUE)
+binaryclass.ScoredaucOld(predicted, truth, names = TRUE)
 multiclass.Scoredauc(predicted, truth, names = TRUE)
 
 # Probabilistic AUC
