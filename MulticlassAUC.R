@@ -19,6 +19,8 @@ probabilities = getPredictionProbabilities(pred)
 
 library(caTools)
 m = colAUC(probabilities, pred$data$truth)
+
+binaryclass.auc(probabilities, pred$data$truth)
 # First column: j 
 colAUC(probabilities[,1], pred$data$truth)
 
@@ -43,3 +45,14 @@ m = m * matrix(rep(weights, each = nrow(m)), ncol = length(weights))
 sum(m[cbind(rep(1:nrow(m), each = 2), c)]) / (nlevels(truth) - 1)
 
 # ensure that it works, also when no observation is present and in higher class case!
+
+# Artificial example
+library(pROC)
+data(aSAH)
+probabilities=(cbind(aSAH$s100b,sample(aSAH$s100b-0.3),sample(aSAH$s100b+2),sample(aSAH$s100b)))
+truth = factor(aSAH$gos6, ordered = FALSE)
+
+m = colAUC(probabilities, truth)
+binaryclass.auc(probabilities, truth)
+
+
