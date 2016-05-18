@@ -4,7 +4,7 @@ rm(list = ls())
 ## The functions ------
 
 ## Basic AUC -----
-binaryclass.aucOld = function(pred, truth,  names=FALSE) {
+binaryclass.auc.naive = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   K=dim(pred)[2]
@@ -65,7 +65,7 @@ binaryclass.aucOld = function(pred, truth,  names=FALSE) {
 
 ## AUNU
 multiclass.aunu= function(pred, truth,  names=FALSE) {
-  mean(vnapply(1:nlevels(truth), function(i) binaryclass.auc(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
+  mean(vnapply(1:nlevels(truth), function(i) binaryclass.auc.naive(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
 }
 
 ## AUNP
@@ -77,14 +77,14 @@ multiclass.aunp= function(pred, truth,  names=FALSE) {
   f.proba=apply(f,2,sum)/n
   
   # Computation
-  dim(pred)[2]*mean(vnapply(1:nlevels(truth), function(i) f.proba[i]*binaryclass.auc(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
+  dim(pred)[2]*mean(vnapply(1:nlevels(truth), function(i) f.proba[i]*binaryclass.auc.naive(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
 }
 
 
 
 ## AU1U
 multiclass.au1u= function(pred, truth,  names=FALSE) {
-  AUC.matrix<-binaryclass.auc(pred, truth,  names=FALSE)
+  AUC.matrix<-binaryclass.auc.naive(pred, truth,  names=FALSE)
   mean(AUC.matrix[row(AUC.matrix)!=col(AUC.matrix)])
 }
 
@@ -97,7 +97,7 @@ multiclass.au1p= function(pred, truth,  names=FALSE) {
   f.proba=apply(f,2,sum)/n
   
   # Computation
-  AUC.matrix<-binaryclass.auc(pred, truth,  names=FALSE)
+  AUC.matrix<-binaryclass.auc.naive(pred, truth,  names=FALSE)
   AUC.matrix.weightsproba<-t(t(AUC.matrix)*f.proba)
   return(mean(AUC.matrix.weightsproba[row(AUC.matrix.weightsproba)!=col(AUC.matrix.weightsproba)])*p)
 }
@@ -105,7 +105,7 @@ multiclass.au1p= function(pred, truth,  names=FALSE) {
 
 ## Scored AUC
 
-binaryclass.ScoredaucOld = function(pred, truth,  names=FALSE) {
+binaryclass.Scoredauc.naive = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   K=dim(pred)[2]
@@ -123,14 +123,14 @@ binaryclass.ScoredaucOld = function(pred, truth,  names=FALSE) {
     return(res)
   }
   
-
+  
   # function makeMatrixI
-  makeMatrixI.scored=function(j, k, pred){
+  makeMatrixI.scored=function(j, pred){
     n=dim(pred)[1]
     matrix.I.temp=matrix(NA,nrow = n,ncol = n)
     for (i.i in c(1:n)) {
       for (i.t in c(1:n)) {
-        matrix.I.temp[i.i,i.t]=I(pred[i.i,j],pred[i.t,k])*(pred[i.i,j]-pred[i.t,k])
+        matrix.I.temp[i.i,i.t]=I(pred[i.i,j],pred[i.t,j])*(pred[i.i,j]-pred[i.t,j])
       }
     }
     return(matrix.I.temp)
@@ -144,13 +144,33 @@ binaryclass.ScoredaucOld = function(pred, truth,  names=FALSE) {
   # matrix AUC
   AUC=matrix(rep(NA, K*K),K,K)
   
+  #   for (j in c(1:K)) {
+  #     ptmMakematrix <- proc.time()
+  #     matrixI.tempj=makeMatrixI.scored(j,pred)
+  #     print(proc.time()-ptmMakematrix)
+  #     for (k in c(1:K)) {
+  #       if (k!=j) {
+  #         AUC[k,j]=t(f[,j])%*%matrixI.tempj%*%f[,k]/(f.summed[j]*f.summed[k])
+  #       }
+  #     }
+  #   }
+  
   for (j in c(1:K)) {
-    ptmMakematrix <- proc.time()
-    matrixI.tempj=makeMatrixI.scored(j,j,pred)
-    print(proc.time()-ptmMakematrix)
     for (k in c(1:K)) {
       if (k!=j) {
-        AUC[j,k]=t(f[,j])%*%matrixI.tempj%*%f[,k]/(f.summed[j]*f.summed[k])
+        temp=0
+        for (u in c(1:n)) {
+          for (v in c(1:n)) {
+            if ((truth[u]==levels[j])&&(truth[v]==levels[k])) {
+              if (pred[u,j]>pred[v,j]) {
+                temp=temp+pred[u,j]-pred[v,j]
+              } 
+              else if (pred[u,j]==pred[v,j])
+                temp=temp+(1/2)*(pred[u,j]-pred[v,j])
+            }
+          }
+        }
+        AUC[k,j]=temp/(f.summed[j]*f.summed[k])  
       }
     }
   }
@@ -164,10 +184,21 @@ binaryclass.ScoredaucOld = function(pred, truth,  names=FALSE) {
 }
 
 
+## test pour 1-3
+predVirginicapart1=pred[1:50,3]
+predvirginicapart3=pred[101:150,3]
+
+sum=0
+for (i in c(1:50)) {
+  for (j in c(1:50)) {
+    sum=sum+predvirginicapart3[j]-predVirginicapart1[i]
+  }
+}
+
 ## Scored SAUC
 
 multiclass.Scoredauc= function(pred, truth,  names=FALSE) {
-  AUC.scored.matrix<-binaryclass.Scoredauc(pred, truth,  names=FALSE)
+  AUC.scored.matrix<-binaryclass.Scoredauc.naive(pred, truth,  names=FALSE)
   mean(AUC.scored.matrix[row(AUC.scored.matrix)!=col(AUC.scored.matrix)])
 }
 
@@ -220,7 +251,7 @@ multiclass.Probabilisticauc = function(pred, truth,  names=FALSE) {
 
 
 ## Fast AUC -----
-binaryclass.auc.fast = function(pred, truth,  names=FALSE) {
+binaryclass.auc.naive.fast = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   y<-truth
@@ -293,7 +324,7 @@ binaryclass.auc.fast = function(pred, truth,  names=FALSE) {
 
 
 ## Fast AUC -----
-binaryclass.auc.fast.perso = function(pred, truth,  names=FALSE) {
+binaryclass.auc.naive.fast.perso = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   y<-truth
@@ -353,7 +384,7 @@ binaryclass.auc.fast.perso = function(pred, truth,  names=FALSE) {
 
 ## AUNU fast
 multiclass.aunu.fast= function(pred, truth,  names=FALSE) {
-  mean(vnapply(1:nlevels(truth), function(i) binaryclass.auc.fast(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
+  mean(vnapply(1:nlevels(truth), function(i) binaryclass.auc.naive.fast(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
 }
 
 ## AUNP fast
@@ -365,14 +396,14 @@ multiclass.aunp.fast= function(pred, truth,  names=FALSE) {
   f.proba=apply(f,2,sum)/n
   
   # Computation
-  dim(pred)[2]*mean(vnapply(1:nlevels(truth), function(i) f.proba[i]*binaryclass.auc.fast(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
+  dim(pred)[2]*mean(vnapply(1:nlevels(truth), function(i) f.proba[i]*binaryclass.auc.naive.fast(cbind(pred[,i],1-pred[,i]), as.factor(truth == levels(truth)[i]))[1,2]))
 }
 
 
 
 ## AU1U fast
 multiclass.au1u.fast= function(pred, truth,  names=FALSE) {
-  AUC.matrix<-binaryclass.auc.fast(pred, truth,  names=FALSE)
+  AUC.matrix<-binaryclass.auc.naive.fast(pred, truth,  names=FALSE)
   mean(AUC.matrix[row(AUC.matrix)!=col(AUC.matrix)])
 }
 
@@ -385,14 +416,14 @@ multiclass.au1p.fast= function(pred, truth,  names=FALSE) {
   f.proba=apply(f,2,sum)/n
   
   # Computation
-  AUC.matrix<-binaryclass.auc.fast(pred, truth,  names=FALSE)
+  AUC.matrix<-binaryclass.auc.naive.fast(pred, truth,  names=FALSE)
   AUC.matrix.weightsproba<-t(t(AUC.matrix)*f.proba)
   return(mean(AUC.matrix.weightsproba[row(AUC.matrix.weightsproba)!=col(AUC.matrix.weightsproba)])*p)
 }
 
 
 ## Fast Scored auc
-binaryclass.Scoredauc.fast.perso = function(pred, truth,  names=FALSE) {
+binaryclass.Scoredauc.naive.fast.perso = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
   y<-truth
@@ -479,14 +510,14 @@ truth=iris$Species
 ## Computation of AUC measures------
 
 # Classic AUC
-binaryclass.auc(predicted, truth, names = TRUE)
+binaryclass.auc.naive(predicted, truth, names = TRUE)
 multiclass.aunu(predicted, truth, names = TRUE)
 multiclass.aunp(predicted, truth, names = TRUE)
 multiclass.au1u(predicted, truth, names = TRUE)
 multiclass.au1p(predicted, truth, names = TRUE)
 
 #Scored AUC
-binaryclass.Scoredauc(predicted, truth, names = TRUE)
+binaryclass.Scoredauc.naive(predicted, truth, names = TRUE)
 multiclass.Scoredauc(predicted, truth, names = TRUE)
 
 # Probabilistic AUC
@@ -497,16 +528,16 @@ multiclass.Probabilisticauc(predicted, truth, names = TRUE)
 # (trick from ca_tool package of considering only the errors false negative)
 
 # Classic AUC fast
-binaryclass.auc.fast(predicted, truth, names = TRUE)
+binaryclass.auc.naive.fast(predicted, truth, names = TRUE)
 multiclass.aunu.fast(predicted, truth, names = TRUE)
 multiclass.aunp.fast(predicted, truth, names = TRUE)
 multiclass.au1u.fast(predicted, truth, names = TRUE)
 multiclass.au1p.fast(predicted, truth, names = TRUE)
 
 # My fast AUC
-binaryclass.auc.fast.perso(predicted, truth, names = TRUE)
+binaryclass.auc.naive.fast.perso(predicted, truth, names = TRUE)
 
-binaryclass.Scoredauc.fast.perso(predicted, truth, names = TRUE)
+binaryclass.Scoredauc.naive.fast.perso(predicted, truth, names = TRUE)
 
 # tend to confirm the 2 first lines are in fact 1 because no problem between
 i=1

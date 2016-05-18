@@ -57,6 +57,67 @@ binaryclass.auc = function(pred, truth,  names=FALSE) {
   return(Auc)
 }
 
+
+binaryclass.aucLikeThem = function(pred, truth,  names=FALSE) {
+  ptm <- proc.time()
+  # Parameters
+  y<-truth
+  X<-as.matrix(pred)
+  ncol=ncol(X) #maj k
+  n=nrow(X)
+  levels.values=as.factor(levels(as.factor(truth)))
+  levels.names=levels(as.factor(truth))
+  K=length(levels.names)
+  L = matrix(rep(levels.values, each = n), n, K)
+  permutations = combs(1:K, 2)
+  nP = nrow(permutations)
+  Auc = matrix(0.5, nP, ncol) # Creates the AUC matrix
+  
+  
+  for (j in c(1:ncol)) {
+    x = sort(X[, j], index = TRUE) # sorting with increasing probability for class j
+    
+    idx = y[x$ix] # indexes by increasing order of probabilities
+    d = (matrix(rep(idx, K), n, K) == L) # Transforming the predicted vector in K columns of TRUE/FALSE
+    d1=d
+    d=apply(d,2,cumsum) # Cumulative sum of number in class
+    dd = rbind(matrix(0, 1, K), d) # Add one line for integral computation
+    d2=d1*1
+    
+    nunq = which(diff(x$x) == 0)
+    nTies = length(nunq)
+    if (nTies) 
+      d = d[-nunq, ]
+    nD = nrow(d) # New number of lines for dj
+    
+    for (i in 1:nP) {
+      c1 = permutations[i, 1]
+      c2 = permutations[i, 2]
+      number = d[nD, c1] * d[nD, c2]
+      sum=0
+      for (p in c(1:n)) {
+        if (d2[p,c1]==1) {
+          #sum=sum+length(which(d2[c(1:p),c2]==1))
+          sum=sum+d[p,c2]
+          index=which(d2[c(1:p),c2]==1)
+        }
+      }
+      Auc[i, j] = sum/number # En gros le nombre de non variations de c2 par rapport a c1 qui est constant
+    }
+  }
+  
+  Auc<-apply(Auc,c(1,2),function(x) return(max(x,1-x)))
+  # Add the names
+  if (names==TRUE) {
+    rownames(Auc) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], sep = "")
+    colnames(Auc) = colnames(X)
+  }
+  
+  print(proc.time()-ptm)
+  return(Auc)
+}
+
+
 ## AUNU
 multiclass.aunu= function(pred, truth,  names=FALSE) {
   mean(vnapply(1:nlevels(truth), function(i) binaryclass.auc(pred[,i], truth == levels(truth)[i])))
@@ -182,9 +243,10 @@ binaryclass.Scoredauc = function(pred, truth,  names=FALSE) {
           if (length(index)>0) {
             for (q in c(1:length(index))) {
               indexq=index[q]
-              #sum=sum+1
-              sum=sum+pred[(x$ix[p]),c1]-pred[(x$ix[indexq]),c2]
-              l<-c(l,pred[(x$ix[p]),c1]-pred[(x$ix[indexq]),c2])
+              diffProba = pred[(x$ix[p]),j]-pred[(x$ix[indexq]),j]
+              #diffProba=1
+              sum=sum + diffProba
+              l<-c(l,diffProba)
               sumInt=sumInt+1
               count=count+1
             }
@@ -335,7 +397,7 @@ multiclass.au1p(predicted, truth, names = TRUE)
 
 #Scored AUC
 binaryclass.Scoredauc(predicted, truth, names = TRUE)
-binaryclass.ScoredaucOld(predicted, truth, names = TRUE)
+binaryclass.Scoredauc.naive(predicted, truth, names = TRUE)
 multiclass.Scoredauc(predicted, truth, names = TRUE)
 
 # Probabilistic AUC

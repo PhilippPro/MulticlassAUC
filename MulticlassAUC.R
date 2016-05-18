@@ -54,5 +54,23 @@ truth = factor(aSAH$gos6, ordered = FALSE)
 
 m = colAUC(probabilities, truth)
 binaryclass.auc(probabilities, truth)
+binaryclass.aucOld(probabilities, truth)
+
+# Artificial example 2
+probabilities=c(0.1,0.1,0.2,0.2,0.3,0.4,0.6,0.6,0.7,0.8,0.9,0.9)
+truth=as.factor(c(0,0,0,1,1,0,1,1,1,0,1,1))
+colAUC(probabilities, truth, alg = "ROC")
+colAUC(probabilities, truth, alg = "Wilcoxon")
+binaryclass.aucOld(cbind(probabilities,1-probabilities), truth)
+binaryclass.auc(probabilities, truth)
+binaryclass.aucLikeThem(probabilities, truth)
 
 
+# Artificial example 3
+probabilities=c(0.1,0.2,0.2,0.2,0.2,0.2,0.6,0.7,0.7,0.7,0.7,0.7)
+truth=as.factor(c(0,0,0,1,1,0,1,1,1,0,1,1))
+colAUC(probabilities, truth, alg = "ROC")
+colAUC(probabilities, truth, alg = "Wilcoxon")
+binaryclass.aucOld(cbind(probabilities,1-probabilities), truth)
+binaryclass.auc(probabilities, truth)
+binaryclass.aucLikeThem(probabilities, truth)
