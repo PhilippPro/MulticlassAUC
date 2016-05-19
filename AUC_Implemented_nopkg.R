@@ -1,9 +1,9 @@
-rm(list = ls())
+#rm(list = ls())
 
 
-## The functions ------
+## The functions
 
-## Basic AUC -----
+## Basic AUC -
 binaryclass.auc.naive = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
@@ -184,16 +184,76 @@ binaryclass.Scoredauc.naive = function(pred, truth,  names=FALSE) {
 }
 
 
-## test pour 1-3
-predVirginicapart1=pred[1:50,3]
-predvirginicapart3=pred[101:150,3]
 
-sum=0
-for (i in c(1:50)) {
-  for (j in c(1:50)) {
-    sum=sum+predvirginicapart3[j]-predVirginicapart1[i]
+binaryclass.Scoredauc.naive.permutations = function(pred, truth,  names=FALSE) {
+  ptm <- proc.time()
+  # Parameters
+  y<-truth
+  X<-as.matrix(pred)
+  ncol=ncol(X) #maj k
+  n=nrow(X)
+  levels.values=as.factor(levels(as.factor(truth)))
+  levels.names=levels(as.factor(truth))
+  K=length(levels.names)
+  L = matrix(rep(levels.values, each = n), n, K)
+  permutations = combs(1:K, 2)
+  permutations = rbind(combs(1:K, 2),combs(K:1, 2))
+  nP = nrow(permutations)
+  Auc = matrix(0.5, nP, ncol) # Creates the Auc matrix
+  
+  # Making the matrix of probabilities p(i,j) is pred
+  
+  # function I
+  I=function(a,b){
+    res=0
+    if (a>b){res=1}
+    if (a==b){res=0.5}
+    return(res)
   }
+  
+  
+  # function makeMatrixI
+  makeMatrixI.scored=function(j, pred){
+    n=dim(pred)[1]
+    matrix.I.temp=matrix(NA,nrow = n,ncol = n)
+    for (i.i in c(1:n)) {
+      for (i.t in c(1:n)) {
+        matrix.I.temp[i.i,i.t]=I(pred[i.i,j],pred[i.t,j])*(pred[i.i,j]-pred[i.t,j])
+      }
+    }
+    return(matrix.I.temp)
+  }
+  
+  
+  # Design Matrix f
+  f= model.matrix( ~ 0 + truth, truth)
+  f.summed=apply(f,2,sum)
+  
+    for (j in c(1:K)) {
+      ptmMakematrix <- proc.time()
+      matrixI.tempj=makeMatrixI.scored(j,pred)
+      print(proc.time()-ptmMakematrix)
+
+      for (i in 1:nP) {
+        c1 = permutations[i, 1]
+        c2 = permutations[i, 2]
+        Auc[i,j]=t(f[,c1])%*%matrixI.tempj%*%f[,c2]/(f.summed[c1]*f.summed[c2])
+      }
+      
+    }
+  
+  
+  Auc<-apply(Auc,c(1,2),function(x) return(max(x,1-x)))
+  # Add the names
+  if (names==TRUE) {
+    rownames(Auc) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], sep = "")
+    colnames(Auc) = colnames(X)
+  }
+  print(proc.time()-ptm)
+  return(Auc)
 }
+
+
 
 ## Scored SAUC
 
@@ -247,10 +307,10 @@ multiclass.Probabilisticauc = function(pred, truth,  names=FALSE) {
 }
 
 
-## Fast Implementations -------
+## Fast Implementations -
 
 
-## Fast AUC -----
+## Fast AUC -
 binaryclass.auc.naive.fast = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
@@ -288,7 +348,7 @@ binaryclass.auc.naive.fast = function(pred, truth,  names=FALSE) {
           number = d[nD, i] * d[nD, j]
           if (number > 0) 
             Auc[i, j] = trapz(x=d[, i], y=d[, j])/number # Number of non-variations of j regarding constant values of i
-          # --> gives the number of false negative when trying to predict j
+          # > gives the number of false negative when trying to predict j
         }
       }
       
@@ -323,7 +383,7 @@ binaryclass.auc.naive.fast = function(pred, truth,  names=FALSE) {
 }
 
 
-## Fast AUC -----
+## Fast AUC -
 binaryclass.auc.naive.fast.perso = function(pred, truth,  names=FALSE) {
   ptm <- proc.time()
   # Parameters
@@ -492,7 +552,7 @@ binaryclass.Scoredauc.naive.fast.perso = function(pred, truth,  names=FALSE) {
 
 
 ###############################################
-## Examples -----
+## Examples --------
 ###############################################
 
 library(HandTill2001)
@@ -507,7 +567,7 @@ predicted <- as.matrix(pred.obj$data[,paste("prob.", levels(pred.obj$data$respon
 colnames(predicted)<-levels(pred.obj$data$response)
 truth=iris$Species
 
-## Computation of AUC measures------
+## Computation of AUC measures
 
 # Classic AUC
 binaryclass.auc.naive(predicted, truth, names = TRUE)
@@ -524,7 +584,7 @@ multiclass.Scoredauc(predicted, truth, names = TRUE)
 binaryclass.Probabilisticauc(predicted, truth, names = TRUE)
 multiclass.Probabilisticauc(predicted, truth, names = TRUE)
 
-## Fast computation of AUC measures ------
+## Fast computation of AUC measures 
 # (trick from ca_tool package of considering only the errors false negative)
 
 # Classic AUC fast
@@ -544,10 +604,10 @@ i=1
 test=cbind(predicted[,i],as.factor(iris$Species))
 test[order(test[,1]),]
 
-# Peut être plutot placer un NA dans les endroits ou ca n'a pas de sens ??? et faire le même tableau qu'eux
+# Peut ?tre plutot placer un NA dans les endroits ou ca n'a pas de sens ??? et faire le m?me tableau qu'eux
 
 
-# fast computation on my own --> ok it works
+# fast computation on my own > ok it works
 
 d2=d1*1
 

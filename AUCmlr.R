@@ -66,6 +66,62 @@ combs = function(v,k) {
   return(P)
 }
 
+
+binaryclass.Scoredauc = function(pred, truth) {
+  
+  # Initializing
+  y<-truth
+  X<-as.matrix(pred)
+  ncol=ncol(X)
+  n=nrow(X)
+  levels.values=as.factor(levels(as.factor(truth)))
+  levels.names=levels(as.factor(truth))
+  K=length(levels.names)
+  L = matrix(rep(levels.values, each = n), n, K)
+  permutations = rbind(combs(1:K, 2),combs(K:1, 2))
+  nP = nrow(permutations)
+  Auc = matrix(0.5, nP, ncol)
+  
+  
+  for (j in c(1:ncol)) {                      # For all the classes probability predictions
+    
+    x = sort(X[, j], index = TRUE)              # sort with increasing probability for class j
+    idx = y[x$ix]                               # get the resulting indexes
+    d = (matrix(rep(idx, K), n, K) == L)        # Transform the predicted vector in K columns which have TRUE/FALSE values
+    d1=d
+    d=apply(d,2,cumsum)                         # Do the cumulative sum of element for each class
+    nD = nrow(d)                                
+    d2=d1*1                                     # Get the previously created matrix n*K with 1 and 0 instead of TRUE/FALSE
+    
+    for (i in 1:nP) {                           # For all the possible permutations
+      c1 = permutations[i, 1]
+      c2 = permutations[i, 2]
+      number = d[nD, c1] * d[nD, c2]              # Number of elements in the cross product
+      sum = 0
+      
+      for (p in c(1:n)) {                         # For all the observations
+        if (d2[p,c1]==1) {                          # Get the 1 of the c1 column in the d2 matrix
+          index=which(d2[c(1:p),c2]==1)             # count the number of elements in the c2 columns that are 1
+          if (length(index)>0) {
+            for (q in c(1:length(index))) {
+              indexq=index[q]
+              diffProba = X[(x$ix[p]),j]-X[(x$ix[indexq]),j]  # Compute the difference of probabilities for these points
+              sum=sum + diffProba
+            }
+          }
+        }
+      }
+      Auc[i, j] = sum/number 
+    }
+  }
+    rownames(Auc) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], sep = "")
+    colnames(Auc) = colnames(X)
+    
+  return(Auc)
+}
+
+
+
 # File: R/measures.R (delete old multiclass.auc!)
 #' @export multiclass.aunu
 #' @rdname measures

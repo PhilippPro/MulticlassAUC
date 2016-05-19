@@ -74,3 +74,14 @@ colAUC(probabilities, truth, alg = "Wilcoxon")
 binaryclass.aucOld(cbind(probabilities,1-probabilities), truth)
 binaryclass.auc(probabilities, truth)
 binaryclass.aucLikeThem(probabilities, truth)
+
+
+# Artificial example 4
+# Here we want to 
+probabilities=c(0.1,0.12,0.14,0.26,0.45,0.65,0.74,0.8,0.85)
+truth=as.factor(c(0,0,0,1,0,1,0,1,1))
+colAUC(probabilities, truth, alg = "ROC")
+colAUC(probabilities, truth, alg = "Wilcoxon")
+binaryclass.aucOld(cbind(probabilities,1-probabilities), truth)
+binaryclass.auc(probabilities, truth)
+binaryclass.aucLikeThem(probabilities, truth)
