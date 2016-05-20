@@ -307,3 +307,54 @@ binaryclass.Scoredauc.final = function(pred, truth,  names=FALSE) {
   return(Auc)
 }
 
+
+
+
+## Scored AUC
+binaryclass.Scoredauc.final2 = function(pred, truth,  names=FALSE) {
+  
+  # Initializing
+  y<-truth
+  X<-as.matrix(pred)
+  ncol=ncol(X)
+  n=nrow(X)
+  levels.values=as.factor(levels(as.factor(truth)))
+  levels.names=levels(as.factor(truth))
+  K=length(levels.names)
+  L = matrix(rep(levels.values, each = n), n, K)
+  permutations = rbind(combs(1:K, 2),combs(K:1, 2))
+  nP = nrow(permutations)
+  Auc = matrix(0.5, nP, ncol)
+  
+  
+  for (j in c(1:ncol)) {                      # For all the classes probability predictions
+    
+    x = sort(X[, j], index = TRUE)              # sort with increasing probability for class j
+    idx = y[x$ix]                               # get the resulting indexes
+    d = (matrix(rep(idx, K), n, K) == L)        # Transform the predicted vector in K columns which have TRUE/FALSE values
+    d2=d*1
+    d=apply(d,2,cumsum)                         # Do the cumulative sum of element for each class
+    nD = nrow(d)                                                                    # Get the previously created matrix n*K with 1 and 0 instead of TRUE/FALSE
+    
+    for (i in 1:nP) {                           # For all the possible permutations
+      c1 = permutations[i, 1]
+      c2 = permutations[i, 2]
+      number = d[nD, c1] * d[nD, c2]              # Number of elements in the cross product
+      sum = 0
+      
+      positiveProbability.number = d2[,c1]*d[,c2]
+      negativeProbability.number = d2[,c2]*(d[nD, c1]-d[,c1])
+      combined.number = positiveProbability.number-negativeProbability.number
+      res = sum(x$x*combined.number)
+      
+      Auc[i, j] = res/number 
+    }
+  }
+  if (names==TRUE) {
+    rownames(Auc) = paste(levels.values[permutations[, 1]], " vs. ", levels.values[permutations[, 2]], sep = "")
+    colnames(Auc) = colnames(X)
+  }
+  return(Auc)
+}
+
+

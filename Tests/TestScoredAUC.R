@@ -6,6 +6,9 @@ rm(list = ls())
 
 ## Get the functions
 source("Tests/ScoredAUCImplementations.R")
+library(mlr)
+library(caTools)
+
 
 ## ========================
 ## Example I : iris dataset 
@@ -28,7 +31,8 @@ pred = predicted
 binaryclass.Scoredauc(predicted, truth, names = TRUE) # fast implementation
 binaryclass.Scoredauc.naive(predicted, truth, names = TRUE) # simple implementation, like definition
 binaryclass.Scoredauc.naive.permutations(predicted, truth, names = TRUE) # Matrix products
-
+binaryclass.Scoredauc.final2(predicted, truth, names = TRUE)
+binaryclass.multiAUC(predicted, truth, TypeofAUC = "sauc")
 
 #### Part 2 : verification of values -----
 
@@ -173,6 +177,7 @@ truth=as.factor(c(0,0,0,1,0,1,0,1,1))
 binaryclass.Scoredauc(predicted, truth, names = TRUE) # fast implementation
 binaryclass.Scoredauc.naive.permutations(predicted, truth, names = TRUE) # Matrix products
 binaryclass.Scoredauc.final(predicted, truth, names = TRUE)
+binaryclass.multiAUC(predicted, truth, TypeofAUC = "sauc")
 
 # Computing the values of the the matrix with definition ----
 sAUC.coeff(predicted, truth, c1=1, c2=2, j=1)
@@ -211,6 +216,7 @@ truth=as.factor(c(0,0,0,1,1,0,1,1,1,0,1,1))
 binaryclass.Scoredauc(predicted, truth, names = TRUE) # fast implementation
 binaryclass.Scoredauc.naive.permutations(predicted, truth, names = TRUE) # Matrix products
 binaryclass.Scoredauc.final(predicted, truth, names = TRUE)
+binaryclass.multiAUC(predicted, truth, TypeofAUC = "sauc")
 
 # Computing the values of the the matrix with definition ----
 sAUC.coeff(predicted, truth, c1=1, c2=2, j=1)
