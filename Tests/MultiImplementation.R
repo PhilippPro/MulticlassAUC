@@ -1,4 +1,4 @@
-binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sauc")) 
+binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sauc", "pauc")) 
 {
   ptm <- proc.time()
   y = as.factor(y)
@@ -21,7 +21,7 @@ binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sau
     stop("colAUC: length(y) and nrow(X) must be the same")
   L = matrix(rep(uL, each = nR), nR, nL)
   per = combs(1:nL, 2)
-  if (TypeofAUC=="sauc")
+  if ((TypeofAUC=="sauc")||(TypeofAUC=="pauc"))
     per = rbind(combs(1:nL, 2),combs(nL:1, 2))
   nP = nrow(per)
   Auc = matrix(0.5, nP, nC)
@@ -109,6 +109,21 @@ binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sau
         combined.number = positiveProbability.number-negativeProbability.number
         res = sum(x$x*combined.number)
         Auc[i, j] = res/number 
+      }
+    }
+  }
+  
+  # Case pauc
+  if (TypeofAUC=="pauc") {
+    for (j in 1:nC) {
+      d = (matrix(rep(y, nL), nR, nL) == L)
+      d2 = d*1
+      for (i in 1:nL) d[, i] = cumsum(d[, i])
+      nD = nrow(d)
+      for (i in 1:nP) {
+        c1 = per[i, 1]
+        c2 = per[i, 2]
+        Auc[i,j]=((t(d2[,c1])%*%X[,j])/d[nD,c1]-(t(d2[,c2])%*%X[,j])/d[nD,c2]+1)/2
       }
     }
   }

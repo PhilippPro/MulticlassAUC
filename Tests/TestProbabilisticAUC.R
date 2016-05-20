@@ -26,3 +26,8 @@ pred = predicted
 
 # Run the pAUC ----
 binaryclass.Probabilisticauc(pred, truth)
+binaryclass.Probabilisticauc.permutations(pred,truth)
+binaryclass.Probabilisticauc.conventions(pred,truth)
+
+source("Tests/MultiImplementation.R")
+binaryclass.multiAUC(pred, truth, TypeofAUC = "pauc")

@@ -67,7 +67,7 @@ combs = function(v,k) {
 }
 
 
-binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sauc")) 
+binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sauc", )) 
 {
   ptm <- proc.time()
   y = as.factor(y)
