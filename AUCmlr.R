@@ -207,7 +207,7 @@ binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sau
 #' @export multiclass.aunu
 #' @rdname measures
 #' @format none
-multiclass.aunu = makeMeasure(id = "multiclass.aunu", minimize = FALSE, best = 0, worst = 1,
+multiclass.aunu = makeMeasure(id = "multiclass.aunu", minimize = FALSE, best = 1, worst = 0.5,
                                properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
                                name = "Average multiclass AUC",
                                note = "Following the definition in the Ferri et. al Paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
@@ -227,7 +227,7 @@ measureAUNU = function(probabilities, truth) {
 #' @export multiclass.aunp
 #' @rdname measures
 #' @format none
-multiclass.aunp = makeMeasure(id = "multiclass.aunp", minimize = FALSE, best = 0, worst = 1,
+multiclass.aunp = makeMeasure(id = "multiclass.aunp", minimize = FALSE, best = 1, worst = 0.5,
                               properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
                               name = "Weighted average multiclass AUC",
                               note = "Following the definition in the Ferri et. al paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
@@ -247,7 +247,7 @@ measureAUNP = function(probabilities, truth) {
 #' @export multiclass.au1u
 #' @rdname measures
 #' @format none
-multiclass.au1u = makeMeasure(id = "multiclass.au1u", minimize = FALSE, best = 0, worst = 1,
+multiclass.au1u = makeMeasure(id = "multiclass.au1u", minimize = FALSE, best = 1, worst = 0.5,
                               properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
                               name = "Average multiclass AUC with each class against each other",
                               note = "Following the definition in the Ferri et. al paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
@@ -269,7 +269,7 @@ measureAU1U = function(probabilities, truth) {
 #' @export multiclass.au1p
 #' @rdname measures
 #' @format none
-multiclass.au1p = makeMeasure(id = "multiclass.au1p", minimize = FALSE, best = 0, worst = 1,
+multiclass.au1p = makeMeasure(id = "multiclass.au1p", minimize = FALSE, best = 1, worst = 0.5,
                               properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
                               name = "Weighted average multiclass AUC with each class against each other",
                               note = "Following the definition in the Ferri et. al paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
