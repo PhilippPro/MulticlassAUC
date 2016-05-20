@@ -21,7 +21,7 @@ binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sau
     stop("colAUC: length(y) and nrow(X) must be the same")
   L = matrix(rep(uL, each = nR), nR, nL)
   per = combs(1:nL, 2)
-  if ((TypeofAUC=="sauc")||(TypeofAUC=="pauc"))
+  if ((TypeofAUC=="sauc")||(TypeofAUC=="pauc")||(TypeofAUC=="auc"))
     per = rbind(combs(1:nL, 2),combs(nL:1, 2))
   nP = nrow(per)
   Auc = matrix(0.5, nP, nC)
