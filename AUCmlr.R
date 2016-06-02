@@ -89,7 +89,7 @@ binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sau
     stop("colAUC: length(y) and nrow(X) must be the same")
   L = matrix(rep(uL, each = nR), nR, nL)
   per = combs(1:nL, 2)
-  if ((TypeofAUC=="sauc")||(TypeofAUC=="pauc"))
+  if ((TypeofAUC=="sauc"))
     per = rbind(combs(1:nL, 2),combs(nL:1, 2))
   nP = nrow(per)
   Auc = matrix(0.5, nP, nC)
@@ -208,12 +208,12 @@ binaryclass.multiAUC<-function (X, y, plotROC = FALSE, TypeofAUC = c("auc", "sau
 #' @rdname measures
 #' @format none
 multiclass.aunu = makeMeasure(id = "multiclass.aunu", minimize = FALSE, best = 1, worst = 0.5,
-                               properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
-                               name = "Average multiclass AUC",
-                               note = "Following the definition in the Ferri et. al Paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
-                               fun = function(task, model, pred, feats, extra.args) {
-                                   measureAUNU(getPredictionProbabilities(pred), pred$data$truth)
-                               }
+                              properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
+                              name = "Average multiclass AUC",
+                              note = "Following the definition in the Ferri et. al Paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
+                              fun = function(task, model, pred, feats, extra.args) {
+                                measureAUNU(getPredictionProbabilities(pred), pred$data$truth)
+                              }
 )
 
 #' @export measureAUNU
@@ -292,3 +292,67 @@ measureAU1P = function(probabilities, truth) {
 
 # File: tests/testthat/test_base_measures.R (delete old multiclass.auc)
 # not sure about how the tests should look like!
+
+
+##########################
+## sauc, pauc and variants
+##########################
+
+# sAUC
+
+#' @export multiclass.sauc
+#' @rdname measures
+#' @format none
+multiclass.sauc = makeMeasure(id = "multiclass.sauc", minimize = FALSE, best = 1, worst = 0.5,
+                              properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
+                              name = "Average multiclass SAUC",
+                              note = "Following the definition in the Ferri et. al Paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
+                              fun = function(task, model, pred, feats, extra.args) {
+                                measureAUNU(getPredictionProbabilities(pred), pred$data$truth)
+                              }
+)
+
+#' @export measureAUNU
+#' @rdname measures
+#' @format none
+measureSAUC = function(probabilities, truth) {
+  if (nlevels(truth) == 2L) probabilities = cbind(probabilities,1-probabilities)
+  m = binaryclass.multiAUC(probabilities, truth, TypeofAUC = "sauc")
+  
+  # Get the indexes from interesting values
+  nlevel = nlevels(truth)
+  c = rbind(combs(1:nlevel,2),combs(nlevel:1,2))
+  index = NULL
+  for (j in c(1:nlevel)) {
+    index = rbind(index, cbind(which(c[,1] == j),j))
+  }
+  
+  # mean of those values
+  mean(m[index])
+}
+
+
+
+# pAUC
+
+#' @export multiclass.PAUC
+#' @rdname measures
+#' @format none
+multiclass.PAUC = makeMeasure(id = "multiclass.PAUC", minimize = FALSE, best = 1, worst = 0.5,
+                              properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
+                              name = "Average multiclass PAUC with each class against each other",
+                              note = "Following the definition in the Ferri et. al paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
+                              fun = function(task, model, pred, feats, extra.args) {
+                                measurePAUC(getPredictionProbabilities(pred), pred$data$truth)
+                              }
+)
+
+#' @export measurePAUC
+#' @rdname measures
+#' @format none
+measurePAUC = function(probabilities, truth) {
+  if (nlevels(truth) == 2L) probabilities = cbind(probabilities,1-probabilities)
+  m = binaryclass.multiAUC(probabilities, truth, TypeofAUC = "pauc")
+  c = c(combn(1:nlevels(truth), 2))
+  mean(m[cbind(rep(1:nrow(m), each = 2), c)])
+}
