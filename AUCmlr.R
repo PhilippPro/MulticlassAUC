@@ -338,7 +338,7 @@ measureSAUC = function(probabilities, truth) {
 #' @export multiclass.PAUC
 #' @rdname measures
 #' @format none
-multiclass.PAUC = makeMeasure(id = "multiclass.PAUC", minimize = FALSE, best = 1, worst = 0.5,
+multiclass.pauc = makeMeasure(id = "multiclass.PAUC", minimize = FALSE, best = 1, worst = 0.5,
                               properties = c("classif", "classif.multi", "req.pred", "req.truth", "req.prob"),
                               name = "Average multiclass PAUC with each class against each other",
                               note = "Following the definition in the Ferri et. al paper: https://www.math.ucdavis.edu/~saito/data/roc/ferri-class-perf-metrics.pdf",                             
